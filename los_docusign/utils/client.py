@@ -6,9 +6,9 @@ from .api_handler import ApiHandler
 
 
 class DocuSignClient:
-    def __init__(self,access_token: str):
+    def __init__(self, access_token: str):
         self.account_id = settings.DOCUSIGN_API_ACCOUNT_ID
-        self.api_key = f'Bearer {access_token}'
+        self.api_key = f"Bearer {access_token}"
 
     # def generate_docusign_preview_url(self, email, userName, client_user_id, returnUrl, envelope_id, access_token, authenticationMethod=None):
     def generate_docusign_preview_url(self, params: dict):

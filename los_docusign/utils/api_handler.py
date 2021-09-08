@@ -1,6 +1,5 @@
 """Module to define base handler for external API calls"""
 
-import logging
 
 import requests
 from requests.exceptions import (
@@ -45,7 +44,7 @@ class ApiHandler:
         """Send API request for the given URL with the specified method, params and payload"""
         headers = self.get_headers()
 
-        try:   
+        try:
             response = requests.request(
                 method,
                 self.url,
