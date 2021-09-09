@@ -1,6 +1,8 @@
 import json
+from datetime import timedelta
 from random import randint
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.utils import timezone
@@ -32,14 +34,14 @@ class TestCase(TestCase):
         )
         DocuSignUserAuth.objects.create(
             access_token="wqerqwerqwerwqerqwererqwrwe",
-            expires_at=timezone.now(),
+            expires_at=timezone.now() - timedelta(days=1),
             organization_pk=2,
             organization_model=content_type,
             two_factor_enabled_flag=False,
             docusign_api_username="1820e571-f4c2-4e89-85b5-83953a845a2a",
             default_user=True,
         )
-        with open("./los_docusign/Envelope_3508S_DF.txt", "r") as file:
+        with open(settings.BASE_DIR.joinpath("Envelope_3508S_DF.txt"), "r") as file:
             payload_3508S = file.read()
         docusign_template = DocusignTemplate.objects.create(
             docusign_payload=payload_3508S, template_type=dcc[0]
@@ -102,11 +104,10 @@ class TestCase(TestCase):
         }
 
     def test_docusign(self):
-        print(f"Inside tests")
+
         # envelope = DocusignEnvelopeStageData.objects.get(envelope_id="fa27a93e-a03a-42a0-8c10-dde6aabf454b")
         # create_and_generate_docusign(envelope, None)
 
-        print("Inside send_for_docusign_new")
         docusign_envelope_stage_data = DocusignEnvelopeStageData()
 
         organization_pk = "2"
@@ -126,9 +127,12 @@ class TestCase(TestCase):
                 organization_pk=organization_pk,
                 docusign_template__template_type__config_key="3508S",
             ).docusign_template
-        except:
+        except DocusignOrgTemplate.DoesNotExists as e:
             dsua = DocuSignUserAuth.objects.get(default_user=True)
-            # docusign_template = DocusignOrgTemplate.objects.get(organization=dsua.organization, docusign_template__template_type=DocusignChoiceConfig.DOCUSIGN_TEMPLATE).docusign_template
+            docusign_template = DocusignOrgTemplate.objects.get(
+                organization=dsua.organization,
+                docusign_template__template_type=DocusignChoiceConfig.DOCUSIGN_TEMPLATE,
+            ).docusign_template
 
         docusign_payload = docusign_template.docusign_payload
         if docusign_payload is None:
@@ -149,8 +153,8 @@ class TestCase(TestCase):
         for signer in signers:
             textTabs = signer["tabs"]["textTabs"]
             # print(json.loads(textTabs))
-            populate_text_tabs(textTabs, text_tabs_data=self.dict)
-            docusign_email_body = f"Thank you for your continued business, please contact us directly for any questions going forward. "
+            populate_text_tabs(textTabs, text_tabs_data=self.field_dict)
+            docusign_email_body = "Thank you for your continued business, please contact us directly for any questions going forward. "
             signer["email"] = "tejas@thesummitgrp.com"
             signer["name"] = "Tejas Bhandari"
             signer["clientUserId"] = client_user_id
@@ -176,7 +180,7 @@ class TestCase(TestCase):
         # return
 
         docusign_client = DocuSignClient(access_token=access_token)
-        envelope_result = docusign_client.create_envelope(resp)
+        envelope_result = docusign_client.create_envelope(request_payload)
         # print(resp)
         resp = json.loads(envelope_result.text)
 
@@ -206,5 +210,3 @@ class TestCase(TestCase):
                 envelope_id=docusign_envelope_stage_data.envelope_id
             ).values()
         )
-
-        return envelope_result

@@ -37,6 +37,11 @@ class DocuSignClient:
         envelope_result = docusign_handler.send_request(
             method="POST", payload=json.dumps(preview_data)
         )
+
+        # TODO: Replace it with logger
+        print(
+            f"generate_docusign_preview_url completed with status; {envelope_result.status_code}"
+        )
         return envelope_result
 
     def create_envelope(self, payload):
@@ -49,4 +54,7 @@ class DocuSignClient:
         envelope_result = docusign_handler.send_request(
             method="POST", payload=json.dumps(payload)
         )
+
+        # TODO: Replace it with logger
+        print(f"create_envelope completed with status; {envelope_result.status_code}")
         return envelope_result

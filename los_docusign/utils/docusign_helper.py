@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from os import path
 
@@ -5,20 +6,21 @@ from django.conf import settings
 
 # import sentry_sdk
 from django.utils import timezone
-from django_docusign.los_docusign.models import DocusignOrgTemplate, DocuSignUserAuth
 from docusign_esign import ApiClient
 from docusign_esign.client.api_exception import ApiException
 
+from los_docusign.models import DocusignOrgTemplate, DocuSignUserAuth
+
 SCOPES = ["signature"]
+
+logger = logging.getLogger(__name__)
 
 
 def get_docusign_user(organization_pk):
     try:
         # Try if the user is the available and has the docusign account
-        docusign_user = DocuSignUserAuth.objects.get(
-            docusign_api_username="1820e571-f4c2-4e89-85b5-83953a845a2a"
-        )
-    except:
+        docusign_user = DocuSignUserAuth.objects.get(organization_pk=organization_pk)
+    except DocuSignUserAuth.DoesNotExist:
         # Else use the admin user
         # Tejas, isn't default_user supposed to be the default user we use as a
         # fallback?
@@ -49,7 +51,7 @@ def check_docusign_access_token(organization_pk):
     token_response = _jwt_auth(docusign_user.docusign_api_username)
     if not token_response:
         use_scopes = SCOPES
-        if not "impersonation" in use_scopes:
+        if "impersonation" not in use_scopes:
             use_scopes.append("impersonation")
         consent_scopes = " ".join(use_scopes)
         redirect_uri = settings.DOCUSIGN_REDIRECT_APP_URL
@@ -66,7 +68,7 @@ def _jwt_auth(docusign_api_username):
     api_client = ApiClient()
     api_client.set_base_path(settings.DOCUSIGN_AUTHORIZATION_SERVER)
     use_scopes = SCOPES
-    if not "impersonation" in use_scopes:
+    if "impersonation" not in use_scopes:
         use_scopes.append("impersonation")
 
     # Catch IO error
