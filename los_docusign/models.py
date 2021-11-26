@@ -4,13 +4,15 @@ from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 from django.db.models import JSONField
 from django.utils.translation import ugettext_lazy as _
+from django_lc_utils.mixins import SoftDeleteMixin
+from model_utils.models import TimeStampedModel
 
 from los_docusign.utils.validators import validate_file_extension
 
 numeric = RegexValidator(r"^\d*$", "Numeric Values Required")
 
 
-class DocuSignUserAuth(models.Model):
+class DocuSignUserAuth(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_client_auths"
         verbose_name = "Docusign user authentication"
@@ -51,7 +53,7 @@ def return_slug_for_url(instance, filename):
     # return 'docusign_signed_documents/{0}/files/{1}'.format(instance.slug, filename)
 
 
-class DocusignEnvelopeStageData(models.Model):
+class DocusignEnvelopeStageData(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_envelope_stage_datas"
         verbose_name = "Docusign Envelope Stage Data"
@@ -112,7 +114,7 @@ class DocusignEnvelopeStageData(models.Model):
             return ""
 
 
-class DocusignOrgTemplate(models.Model):
+class DocusignOrgTemplate(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_org_templates"
         verbose_name = "Docusign Organization Template"
@@ -135,9 +137,9 @@ class DocusignOrgTemplate(models.Model):
         return f"{self.organization_pk}-{self.docusign_template.template_type}"
 
 
-class DocusignTemplateOrgExclusion(models.Model):
+class DocusignTemplateOrgExclusion(TimeStampedModel, SoftDeleteMixin):
     class Meta:
-        db_table = "docusign_template_org_exclulsions"
+        db_table = "docusign_template_org_exclusions"
         verbose_name = "Docusign Organization Template Exclusion"
         verbose_name_plural = "Docusign Organization Template Exclusions"
         unique_together = ["organization_pk", "document_name", "template"]
@@ -159,7 +161,7 @@ class DocusignTemplateOrgExclusion(models.Model):
     )
 
 
-class DocusignChoiceConfig(models.Model):
+class DocusignChoiceConfig(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_choice_configs"
         verbose_name = "Docusign Choice Config"
@@ -186,7 +188,7 @@ class DocusignChoiceConfig(models.Model):
         return f"{self.docusign_model}-{self.config_key}"
 
 
-class DocusignTemplate(models.Model):
+class DocusignTemplate(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_templates"
         verbose_name = "Docusign Template"
@@ -219,7 +221,7 @@ class DocusignTemplate(models.Model):
         return self.template_type.config_key
 
 
-class DocusignOrgTemplateConfig(models.Model):
+class DocusignOrgTemplateConfig(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_org_template_configs"
         verbose_name = "Docusign Organization Template Config"
@@ -262,7 +264,7 @@ class DocusignOrgTemplateConfig(models.Model):
     # return self.get_template_config_display()
 
 
-class DocusignEnvelopeAuditLog(models.Model):
+class DocusignEnvelopeAuditLog(TimeStampedModel, SoftDeleteMixin):
     class Meta:
         db_table = "docusign_envelope_audit_log"
         verbose_name = "Docusign Envelope Audit Log"

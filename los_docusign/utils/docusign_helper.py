@@ -1,19 +1,30 @@
+import json
 import logging
-from datetime import timedelta
+import re
+from datetime import datetime, timedelta
 from os import path
+from xml.etree import cElementTree as ElementTree
 
 from django.conf import settings
+from django.http import Http404
 
 # import sentry_sdk
 from django.utils import timezone
 from docusign_esign import ApiClient
 from docusign_esign.client.api_exception import ApiException
 
-from los_docusign.models import DocusignOrgTemplate, DocuSignUserAuth
+from los_docusign.models import (
+    DocusignEnvelopeAuditLog,
+    DocusignEnvelopeStageData,
+    DocusignOrgTemplate,
+    DocuSignUserAuth,
+)
+
+from .XmlParser import XmlDictConfig
 
 SCOPES = ["signature"]
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger("root")
 
 
 def get_docusign_user(organization_pk):
@@ -95,7 +106,7 @@ def _jwt_auth(docusign_api_username):
         if "consent_required" in body:
             return None
         else:
-            # sentry_sdk.capture_exception(err)
+            LOGGER.error(f"Error while getting the jwt token for docusign: {err}")
             raise Exception
 
     return jwtTokenResponse
@@ -145,7 +156,142 @@ def get_docusign_template(organization_pk, template_name=None):
     docusign_payload = docusign_template.docusign_payload
     if docusign_payload is None:
         print("Payload Not found for org. Check database..return")
+        LOGGER.error(
+            f"Payload Not found for org {organization_pk}. Check database..return"
+        )
         return
 
     # resp = json.loads(docusign_payload)
     return docusign_payload
+
+
+def process_docusign_webhook(xml_string):
+    # request_data_dict = request.data
+    root = ElementTree.XML(xml_string)
+    request_data_dict = XmlDictConfig(root)
+    m = re.search(
+        "{http://www.docusign.net/API/(.+?)}EnvelopeStatus", str(request_data_dict)
+    )
+    api_version = None
+    if m:
+        api_version = m.group(1)
+    else:
+        # sentry_sdk.capture_exception(Exception(f'Failed to retrieve API Version for the DocuSign Webhook: {str(request_data_dict)}'))
+        raise Http404
+
+    docusign_schema = "{http://www.docusign.net/API/" + api_version + "}"
+
+    # Since we are not using any of the data sent back by DocuSign, we clear those fields which potentially causes json.dumps to fail to parse Decimal Values which are set by the Parser
+    request_data_dict[f"{docusign_schema}EnvelopeStatus"][
+        f"{docusign_schema}RecipientStatuses"
+    ][f"{docusign_schema}RecipientStatus"][f"{docusign_schema}TabStatuses"] = None
+    request_data_dict[f"{docusign_schema}EnvelopeStatus"][
+        f"{docusign_schema}RecipientStatuses"
+    ][f"{docusign_schema}RecipientStatus"][f"{docusign_schema}UserName"] = None
+    request_data_dict[f"{docusign_schema}EnvelopeStatus"][
+        f"{docusign_schema}RecipientStatuses"
+    ][f"{docusign_schema}RecipientStatus"][f"{docusign_schema}FormData"] = None
+    line = re.sub(
+        r"({http://www.docusign.net/API/[0-9].[0-9]})",
+        "",
+        json.dumps(request_data_dict),
+    )
+    docusign_data_dict = json.loads(line)
+    envelopeId = docusign_data_dict["EnvelopeStatus"]["EnvelopeID"]
+
+    try:
+        DocusignEnvelopeStageData.objects.get(envelope_id=envelopeId)
+    except DocusignEnvelopeStageData.DoesNotExist:
+        LOGGER.error(f"Envelope id  {envelopeId} not found in system")
+        raise Exception(f"Envelope id  {envelopeId} not found in system")
+
+    return _extract_envelope_status(docusign_data_dict)
+
+
+def _extract_envelope_status(docusign_data_dict):
+    print("processing docusign")
+
+    envelopeId = docusign_data_dict["EnvelopeStatus"]["EnvelopeID"]
+    recipient_status_tag = docusign_data_dict["EnvelopeStatus"]["RecipientStatuses"][
+        "RecipientStatus"
+    ]
+
+    recipient_status = recipient_status_tag.get("Status", None)
+
+    recipient_auth_status = recipient_status_tag.get(
+        "RecipientAuthenticationStatus", None
+    )
+    recipient_id_question_status = None
+    recipient_id_lookup_status = None
+
+    if recipient_auth_status:
+        recipient_idquestion_result = recipient_auth_status.get(
+            "IDQuestionsResult", None
+        )
+        if recipient_idquestion_result:
+            recipient_id_question_status = recipient_idquestion_result["Status"]
+        recipient_id_lookup_result = recipient_auth_status.get("IDLookupResult", None)
+        if recipient_id_lookup_result:
+            recipient_id_lookup_status = recipient_id_lookup_result["Status"]
+
+    envelope_status = docusign_data_dict["EnvelopeStatus"]["Status"]
+
+    try:
+        envelope_stage_data = DocusignEnvelopeStageData.objects.get(
+            envelope_id=envelopeId
+        )
+    except DocusignEnvelopeStageData.DoesNotExist:
+        LOGGER.error(
+            f"Envelope id  {envelopeId} not found in system while extracting status from Webhook notification"
+        )
+        return
+    except Exception as e:
+        LOGGER.error(
+            f"Exception while extracting status from Webhook notification: {e}"
+        )
+        return
+
+    recipient_status = str(recipient_status).lower()
+    envelope_status = str(envelope_status).lower()
+    if recipient_auth_status:
+        recipient_id_question_status = str(recipient_id_question_status).lower()
+        recipient_id_lookup_status = str(recipient_id_lookup_status).lower()
+
+    # Let's not overwrite the status of authentication failed if the recipient failed authentication.
+    # We need this to know if the receipient failed authentication and later on completed the application
+    if not envelope_stage_data.recipient_status == "authentication failed":
+        envelope_stage_data.recipient_status = recipient_status
+
+    if "failed" in (recipient_id_lookup_status, recipient_id_question_status):
+        envelope_stage_data.recipient_status = "authentication failed"
+        envelope_stage_data.recipient_auth_info = recipient_auth_status
+        recipient_status = "authentication failed"
+
+    event_value = envelope_status
+
+    if recipient_status == "authentication failed" and envelope_status == "sent":
+        event_value = "authentication failed"
+
+    # TODO: Need to understand how can we log this in the DocuSignEnvelopeAuditLog, since we do not have the content type?
+    log = DocusignEnvelopeAuditLog(
+        content_type=envelope_stage_data.content_type,
+        object_pk=envelope_stage_data.object_pk,
+        event_received_at=datetime.now(),
+        envelope_id=envelope_stage_data.envelope_id,
+        event_type="WEBHOOK",
+        event_value=event_value,
+        remote_addr="0.0.0.0",
+    )
+    log.save()
+
+    # If the user fails KBA, then move the status back to APPLICANT Correction.
+    if event_value == "authentication failed":
+        envelope_status = "authentication failed"
+
+    envelope_stage_data.envelope_status = envelope_status
+    envelope_stage_data.updated_at = timezone.now()
+    envelope_stage_data.save()
+
+    print(f"END process_docusign_notification: {envelopeId}")
+    LOGGER.debug(f"END process_docusign_notification: {envelopeId}")
+    return envelopeId, envelope_status

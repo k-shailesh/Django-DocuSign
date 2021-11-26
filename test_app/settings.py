@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "los_docusign.apps.LosDocusignConfig",
     "test_app.test_organization.apps.TestOrganizationConfig",
+    "django_lc_utils",
 ]
 
 MIDDLEWARE = [
@@ -129,23 +130,18 @@ USE_TZ = True
 STATIC_URL = "/static/"
 BASE_DIR = Path(__file__).resolve().parent
 DOCUSIGN_API_ACCOUNT_ID = env(
-    "DOCUSIGN_API_ACCOUNT_ID", default="afdb1d7a-b912-44aa-8c3a-40938e68947c"
+    "DOCUSIGN_API_ACCOUNT_ID", default="<Docusign API Account Id >"
 )
-DOCUSIGN_CLIENT_ID = env(
-    "DOCUSIGN_CLIENT_ID", default="fe5de36b-b4fd-4026-b01a-32e344b91ce7"
-)
+DOCUSIGN_CLIENT_ID = env("DOCUSIGN_CLIENT_ID", default="<Docusign Client Id>")
 DOCUSIGN_API_ENDPOINT = env(
     "DOCUSIGN_API_ENDPOINT", default="https://demo.docusign.net/restapi/v2.1/accounts/"
 )
 DOCUSIGN_TOKEN_EXPIRY_IN_SECONDS = env("DOCUSIGN_TOKEN_EXPIRY_IN_SECONDS", default=3600)
-# DOCUSIGN_REDIRECT_APP_URL = env('DOCUSIGN_REDIRECT_APP_URL', default=BASE_URL)
 DOCUSIGN_AUTHORIZATION_SERVER = env(
     "DOCUSIGN_AUTHORIZATION_SERVER", default="account-d.docusign.com"
 )
-# DOCUSIGN_WEBHOOK_URL = env('DOCUSIGN_WEBHOOK_URL', default=f'{BASE_URL}/api/docusign/')
-# DOCUSIGN_PRIVATE_KEY_FILE = env('DOCUSIGN_PRIVATE_KEY_FILE', default='-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAhT2mYCiJQSSbgO/zEfHsSHWRy7NLGNrq42V95pM0lkGMAOHG\nziI7HLX8VNaS/pF4cLqt/aajbjp0gJkPYOoxqhlswxy3yh7dXu+bQ6sQc8CV4EhC\n2F0tshVMuOc4J6YScVFl5Sb1mlgCaaSkkL/Hk5XKWxlERDphcY6Fd1I+U9FGVRoV\ngYIqk1dV4Sbrc0outoY8vf+4wul0FfZoJ1PVcDsnrkWMqE9xgffA4jY7s2CB08yA\niPu3qijDfNcfNJwe/zD6ram4BOtjU912fd8/RE8NmxGgcFfjK7+Quvc/bDFaEL+E\nILfNg0MHlmGVOxF/eHEFeCjQyYhMdlIsOHYCqQIDAQABAoIBAAVsVnbIf5mur0Om\nwJqE4cyrOGV1pUNcOb5Ktb6qVDQfc97fUbO3Mfe/socTesUwz5mrB4TxAOruJyrK\n0BTuQ1o8kbA5XYO1EOaZ0xSEhHVpq9AGsO3UkRUUB9zo0GDQwiRpnz+d/9Yp6eM5\n59bab3mi2asukphCVhAEsIsERnQr2+k0bqgLwh9AzC6uYwsgAeVP8r9PpKpSyIEP\nwXMFOAl+hS0ji/Q9106ZfmHORJw534EpaEAFFXxTHtmJM05UTTP0lnsDfCr5NP14\nDLtRq1vCO5atq35CFPqzZUAO6T+q2YiXqsuse2PTMkxDKWyZ+MOdGu/pxBOaO7i6\nGv93Lc8CgYEAv1zc44Fs2iTuhLmgjTLZtCOuZpKu/fWLFMRlRq3CGlmx+A4B/gAO\nH+jn34B+TCil0mW9pJL3gMKblEDHuWUZB9wtK2gJr7xscWceFJDIVyjPG9HC+dm2\neCefqrk4yPYJSWIl/zocBodihbAwhT1/jPlTRKsYzZMKi39NLg5iE4MCgYEAsj77\n5qp8d0AEAbeeANLifTrmzVzxPeaEiXbf0zuavxkraC9huxyXKMSzFEPbgCtWLrsV\nGxF61Tc+kX4tvUjOzsAvlAAxsom4MdLthlv+CI1cBLNzAcROF+EC99yWjshMIW8x\nNeKAzbhm2ogMhyj1YpTRZ3OAxz6F4U+FPDPA/WMCgYAx4kdCly6E/zOeLbWImUTf\nDJ4d5wbu9N84nqm37vu2WsNl4mDqkaEc+F3ZiWli+QWg/xycliMm0ZQ05V4rGguY\nXPD5a7l6sieiuDrDKarP7bdvjRLChtpmIA4jNv1yhZCOLKOzELbVjN1F9FPxp8Jk\nQWpPcDqa/EW3b4vzAZTXeQKBgQCYsvx6D3OxdVX5YqQpcIA3aE5xgD3rGaBRY1U8\nUMOxEo7tIipHcabNdjU0Fy3kDzw1rG/YUJE6N6mSWtY0YjtJQ7t+vuvUV8dEZ760\na/qkuPUr0c+ko9eC/XDdhkw05cLSob82umQ92MvESujwoVYWrgb26SxZhGaNLuKl\nQHEEoQKBgQC3hrRfbVFEcb3O4dwDi5GFPG0KjGaiI10mAHEQq47cRQPcngephkDb\nbNMtvpeQuvg8CTWQSdUpZ3hrtwXLL2IZj4BNMMJCGndcNA761MxOFXwMbC4mtatJ\nXDWJFjGlDty/6W2q+FxpvVpFy0fYlk4vwM4KeapbSgzz4xOGte+aWw==\n-----END RSA PRIVATE KEY-----\n')
-
 DOCUSIGN_PRIVATE_KEY_FILE = env(
-    "DOCUSIGN_PRIVATE_KEY_FILE", default=BASE_DIR.joinpath("private.key")
+    "DOCUSIGN_PRIVATE_KEY_FILE",
+    default="<Private Key file data>",
 )
 DOCUSIGN_ENABLE_KBA = env("DOCUSIGN_ENABLE_KBA", default=False)
