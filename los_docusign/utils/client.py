@@ -1,8 +1,12 @@
 import json
+import logging
 
 from django.conf import settings
 
 from .api_handler import ApiHandler
+from .docusign_helper import process_docusign_webhook
+
+LOGGER = logging.getLogger("root")
 
 
 class DocuSignClient:
@@ -10,15 +14,30 @@ class DocuSignClient:
         self.account_id = settings.DOCUSIGN_API_ACCOUNT_ID
         self.api_key = f"Bearer {access_token}"
 
-    # def generate_docusign_preview_url(self, email, userName, client_user_id, returnUrl, envelope_id, access_token, authenticationMethod=None):
     def generate_docusign_preview_url(self, params: dict):
+
+        if not (
+            "envelope_id" in params
+            and params["envelope_id"] is not None
+            or "authentication_method" in params
+            and params["authentication_method"] is not None
+            or "email" in params
+            and params["email"] is not None
+            or "user_name" not in params
+            and params["user_name"] is not None
+            or "client_user_id" not in params
+            and params["client_user_id"] is not None
+            or "return_url" not in params
+            and params["return_url"] is not None
+        ):
+            raise Exception("Invalid input dict for generate_docusign_preview_url")
+
         envelope_id = params["envelope_id"]
         authentication_method = params["authenticationMethod"]
         email = params["email"]
         user_name = params["userName"]
         client_user_id = params["clientUserId"]
         return_url = params["returnUrl"]
-        access_token = params["access_token"]
 
         url = settings.DOCUSIGN_API_ENDPOINT
 
@@ -33,14 +52,13 @@ class DocuSignClient:
             "clientUserId": client_user_id,
             "returnUrl": return_url,
         }
-        docusign_handler = ApiHandler(preview_url, access_token)
+        docusign_handler = ApiHandler(preview_url, self.api_key)
         envelope_result = docusign_handler.send_request(
             method="POST", payload=json.dumps(preview_data)
         )
 
-        # TODO: Replace it with logger
-        print(
-            f"generate_docusign_preview_url completed with status; {envelope_result.status_code}"
+        LOGGER.debug(
+            f"generate_docusign_preview_url completed for envelope {envelope_id} with status; {envelope_result.status_code}. Preview Url Data: {envelope_result.text}"
         )
         return envelope_result
 
@@ -55,6 +73,36 @@ class DocuSignClient:
             method="POST", payload=json.dumps(payload)
         )
 
-        # TODO: Replace it with logger
-        print(f"create_envelope completed with status; {envelope_result.status_code}")
+        LOGGER.debug(
+            f"create_envelope completed with status; {envelope_result.status_code}. Envelope Creation Data: {envelope_result.text}"
+        )
         return envelope_result
+
+    def download_docusign_document(self, params: dict):
+        envelopeId = params["envelope_id"]
+        # Value can be combined, archive
+        document_download_option = params["doc_download_option"]
+
+        account_id = settings.DOCUSIGN_API_ACCOUNT_ID
+        headers = None
+        if document_download_option == "archive":
+            resource_path = f"{account_id}/envelopes/{envelopeId}/documents/archive"
+            headers = {}
+            headers["Accept"] = "application/zip, application/octet-stream"
+        elif document_download_option == "combined":
+            resource_path = f"{account_id}/envelopes/{envelopeId}/documents/combined"
+
+        url = settings.DOCUSIGN_API_ENDPOINT
+        doc_url = url + resource_path
+
+        docusign_handler = ApiHandler(doc_url, self.api_key)
+        doc_download_result = docusign_handler.send_request(
+            method="GET", extra_headers=headers
+        )
+        LOGGER.info(
+            f"download_docusign_document completed with status: {doc_download_result.status_code} for envelope id: {envelopeId}"
+        )
+        return doc_download_result
+
+    def process_docusign_notification(self, xml_string: str):
+        return process_docusign_webhook(xml_string)

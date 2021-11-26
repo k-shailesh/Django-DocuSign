@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import timedelta
 from random import randint
 
@@ -52,8 +53,6 @@ class TestCase(TestCase):
             docusign_template=docusign_template,
         )
         # DocusignEnvelopeStageData.objects.create(slug="fa27a93e-a03a-42a0-8c10-dde6aabf454b",envelope_id="fa27a93e-a03a-42a0-8c10-dde6aabf454b",record_status="S",envelope_status="completed",created_at=timezone.now(),updated_at=timezone.now(),docusign_user=1,client_user_id=123456789,content_type=1,object_pk=1)
-        # Animal.objects.create(name="lion", sound="roar")
-        # Animal.objects.create(name="cat", sound="meow")
         self.field_dict = self.create_field_dict()
 
     def create_field_dict(self):
@@ -181,9 +180,20 @@ class TestCase(TestCase):
 
         docusign_client = DocuSignClient(access_token=access_token)
         envelope_result = docusign_client.create_envelope(request_payload)
+
         # print(resp)
         resp = json.loads(envelope_result.text)
+        print(resp)
+        preview_data = {}
+        preview_data["envelope_id"] = resp["envelopeId"]
+        preview_data["authenticationMethod"] = "None"
+        preview_data["email"] = "tejas@thesummitgrp.com"
+        preview_data["userName"] = "Tejas Bhandari"
+        preview_data["clientUserId"] = client_user_id
+        preview_data["returnUrl"] = "http://www.google.com"
 
+        preview_result = docusign_client.generate_docusign_preview_url(preview_data)
+        print(preview_result.text)
         docusign_envelope_stage_data.envelope_response = envelope_result.text
         current_time = timezone.now()
         if envelope_result.status_code == 201:
@@ -198,9 +208,7 @@ class TestCase(TestCase):
             # TODO: Set some error message received from the response
             docusign_envelope_stage_data.created_date = current_time
             docusign_envelope_stage_data.updated_date = current_time
-            description_of_error = (
-                f"DocuSign Error: Failed to send the envelope: {envelope_result.text}"
-            )
+
             # sentry_sdk.capture_exception(Exception(description_of_error))
 
         docusign_envelope_stage_data.save()
@@ -210,3 +218,26 @@ class TestCase(TestCase):
                 envelope_id=docusign_envelope_stage_data.envelope_id
             ).values()
         )
+
+        # Testing Webhook notification processing
+        with open(f"{os.getcwd()}/tests/test_webhook.xml", "r") as file:
+            data = (
+                file.read()
+                .replace("\n", "")
+                .replace(
+                    "<EnvelopeID></EnvelopeID>",
+                    f"<EnvelopeID>{resp['envelopeId']}</EnvelopeID>",
+                )
+            )
+
+        envelopeId, envelope_status = docusign_client.process_docusign_notification(
+            data
+        )
+        self.assertEqual(envelope_status, "completed")
+        self.assertEqual(envelopeId, resp["envelopeId"])
+        if envelope_status == "completed":
+            input_data = {}
+            input_data["envelope_id"] = "6aaec95f-bc54-48cf-8270-5b27fe5e41d8"
+            input_data["doc_download_option"] = "combined"
+            result = docusign_client.download_docusign_document(input_data)
+            self.assertEqual(result.status_code, "200")
