@@ -23,6 +23,7 @@ Test file has the sample implementation of the test_app
 
 ## Functions in client.py
 1.  generate_docusign_preview_url(dict)
+    
     Params required in dict:
     -   "envelope_id"
     -   "authentication_method"
@@ -32,10 +33,12 @@ Test file has the sample implementation of the test_app
     -   "return_url"
 
 2. create_envelope(payload)
+
     Params required:
     -   DocuSign payload in JSON format
 
 3. download_docusign_document(dict)
+
     Params required in dict:
     -   "envelope_id"
     -   "doc_download_option"
