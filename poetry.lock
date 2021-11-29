@@ -274,16 +274,11 @@ python-crontab = ">=2.3.4"
 
 [[package]]
 name = "django-environ"
-version = "0.6.0"
-description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
+version = "0.4.5"
+description = "Django-environ allows you to utilize 12factor inspired environment variables to configure your Django application."
 category = "main"
 optional = false
-python-versions = ">=3.4,<4"
-
-[package.extras]
-develop = ["coverage[toml] (>=5.0a4)", "pytest (>=4.6.11)", "furo (>=2021.8.17b43,<2021.9.0)", "sphinx (>=3.5.0)", "sphinx-notfound-page"]
-docs = ["furo (>=2021.8.17b43,<2021.9.0)", "sphinx (>=3.5.0)", "sphinx-notfound-page"]
-testing = ["coverage[toml] (>=5.0a4)", "pytest (>=4.6.11)"]
+python-versions = "*"
 
 [[package]]
 name = "django-lc-utils"
@@ -802,7 +797,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "2858dd7b96a7752fb033075376f319802277985f31f195235e7e34997ab9678f"
+content-hash = "3c23eb7718bd5f16db4baaf23db1d9619a71ee641aae898b5f761b1ca727db65"
 
 [metadata.files]
 amqp = [
@@ -952,8 +947,8 @@ django-celery-beat = [
     {file = "django_celery_beat-2.2.0-py2.py3-none-any.whl", hash = "sha256:c4c72a9579f20eff4c4ccf1b58ebdca5ef940f4210065057db1754ea5f8dffdc"},
 ]
 django-environ = [
-    {file = "django-environ-0.6.0.tar.gz", hash = "sha256:6b3ce447f31c5a5144671d754baa0819c9bde2fb34dcdc05ba619a97f4567e5a"},
-    {file = "django_environ-0.6.0-py2.py3-none-any.whl", hash = "sha256:f63b6489ee2113239fe60cdf94efc93a2b42ac07aefb5b5182d401b4fa820374"},
+    {file = "django-environ-0.4.5.tar.gz", hash = "sha256:6c9d87660142608f63ec7d5ce5564c49b603ea8ff25da595fd6098f6dc82afde"},
+    {file = "django_environ-0.4.5-py2.py3-none-any.whl", hash = "sha256:c57b3c11ec1f319d9474e3e5a79134f40174b17c7cc024bbb2fad84646b120c4"},
 ]
 django-lc-utils = [
     {file = "django-lc-utils-0.2.0.tar.gz", hash = "sha256:08d914a31625b072976b35e13e983956a8ca09d51f29b7a1e7e5fdbe190c8b98"},

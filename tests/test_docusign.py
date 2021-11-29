@@ -240,4 +240,4 @@ class TestCase(TestCase):
             input_data["envelope_id"] = "6aaec95f-bc54-48cf-8270-5b27fe5e41d8"
             input_data["doc_download_option"] = "combined"
             result = docusign_client.download_docusign_document(input_data)
-            self.assertEqual(result.status_code, "200")
+            self.assertEqual(result.status_code, 200)
