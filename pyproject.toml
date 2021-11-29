@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "los_docusign"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["tejasb <tejas@thesummitgrp.com>"]
 
