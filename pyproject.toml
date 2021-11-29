@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "los_docusign"
-version = "0.2.1"
+version = "0.2.2"
 description = ""
 authors = ["tejasb <tejas@thesummitgrp.com>"]
 
@@ -15,8 +15,6 @@ django-utils-six = "^2.0"
 django-environ = "^0.4.5"
 PyJWT = "1.7.1"
 django-model-utils = "^4.1.1"
-celery = "4.4.6"
-django-celery-beat = "2.2.0"
 djangorestframework-xml = "^2.0.0"
 requests = "^2.26.0"
 django-lc-utils = "^0.2.0"
