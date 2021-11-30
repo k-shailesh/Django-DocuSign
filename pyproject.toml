@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "los_docusign"
 version = "0.2.6"
-description = ""
+description = "Docusign Django Wrapper for integrating DocuSign with Django Application"
 authors = ["tejasb <tejas@thesummitgrp.com>"]
 
 [tool.poetry.dependencies]
