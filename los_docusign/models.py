@@ -45,7 +45,7 @@ class DocuSignUserAuth(TimeStampedModel, SoftDeleteMixin):
         if self.default_user:
             return "Default Docusign User"
         else:
-            return f"Docusign User for {self.object_pk}"
+            return f"Docusign User for {self.organization_pk}"
 
 
 def return_slug_for_url(instance, filename):
